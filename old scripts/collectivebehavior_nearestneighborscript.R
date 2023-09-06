@@ -1,4 +1,5 @@
 #Average nearest neighbor calculation
+#again, based from the DLC style
 
 #first, we must calculate a new matrix of the distances between each fish to each other
 #for an N=5, this will result in 10 distances. 
