@@ -51,6 +51,44 @@ names(modeldata_pointscores) <- c(modeldata_nodes) #change the name of the point
 modeldata_pointscores$frame <- seq_along(modeldata_pointscores[,1]) #create a frame column
 modeldata_pointscores_melted <- reshape2::melt(modeldata_pointscores, id=c("frame")) #melt to the frame column so data is in wide format and can be filtered
 
+#nose
 modeldata_pointscores_noses <- modeldata_pointscores_melted %>%
   filter(variable == "nose")
+hist(as.numeric(modeldata_pointscores_noses$value), breaks=50, xlab="Nose Scores", ylab="Frequency", 
+     main=paste("Nose Scores For", figuretitle, sep=" "))
+
+#eyeL
+modeldata_pointscores_eyeL <- modeldata_pointscores_melted %>%
+  filter(variable == "eyeL")
+hist(as.numeric(modeldata_pointscores_eyeL$value), breaks=50, xlab="EyeL Scores", ylab="Frequency", 
+     main=paste("EyeL Scores For", figuretitle, sep=" "))
+
+#eyeR
+modeldata_pointscores_eyeR <- modeldata_pointscores_melted %>%
+  filter(variable == "eyeR")
+hist(as.numeric(modeldata_pointscores_eyeR$value), breaks=50, xlab="EyeR Scores", ylab="Frequency", 
+     main=paste("EyeR Scores For", figuretitle, sep=" "))
+
+#head
+modeldata_pointscores_head <- modeldata_pointscores_melted %>%
+  filter(variable == "head")
+hist(as.numeric(modeldata_pointscores_head$value), breaks=50, xlab="Head Scores", ylab="Frequency", 
+     main=paste("Head Scores For", figuretitle, sep=" "))
+
+#spine1
+modeldata_pointscores_spine1 <- modeldata_pointscores_melted %>%
+  filter(variable == "spine1")
+hist(as.numeric(modeldata_pointscores_spine1$value), breaks=50, xlab="Spine1 Scores", ylab="Frequency", 
+     main=paste("Spine1 Scores For", figuretitle, sep=" "))
+
+#spine2
+modeldata_pointscores_spine2 <- modeldata_pointscores_melted %>%
+  filter(variable == "spine2")
+hist(as.numeric(modeldata_pointscores_spine2$value), breaks=50, xlab="Spine2 Scores", ylab="Frequency", 
+     main=paste("Spine2 Scores For", figuretitle, sep=" "))
+
+#caudal
+
+#tail
+
      
