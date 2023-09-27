@@ -14,8 +14,8 @@ library(ggplotify)
 
 #file import
 #change the file name in quotes to your current .h5 file
-modeldata <- "model_comparison_6-13-2023.020_HiQualCamTestVid2_25fps_1000.analysis.h5"
-figuretitle <- "HiQualCamTestVid_940frames"
+modeldata <- "20230926_1010framemodel_batchtrainingtest.001_04-08-2023_group3_R.analysis.h5"
+figuretitle <- "04-08-2023_group3_20230926_1010framemodel"
 
 modeldata_bits <- h5ls(here(modeldata))
 
