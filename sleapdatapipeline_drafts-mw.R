@@ -1,9 +1,17 @@
 # Draft for sleap data pipeline
 
-#####################################################################################
-#Characterize a chase
+#library import
+library(rhdf5)
+library(here)
+library(tidyverse)
+library(zoo)
+library(reshape2)
+library(data.table)
+library(zoo)
+library(REdaS)
 
-#filter for chase moments, 2 seconds before and after:
+#####################################################################################
+#assemble head point df for calcs where we only need one point:
 
 #filter for head:
 head_df <- trialdata %>%
@@ -14,6 +22,10 @@ head_df <- trialdata %>%
   mutate(Behavior = na_if(Behavior, "S")) %>%
   mutate(Behavior = na_if(Behavior, "X")) %>%
   mutate(Behavior = na_if(Behavior, ""))
+
+###################################################################333333
+
+#Chase stuff
 
 #seq along for each instance of chase, for grouping later:
 tmp <- head_df %>%
@@ -250,16 +262,20 @@ tailbeats$spine1.y <- as.numeric(tailbeats$spine1.y)
 
 ################################################
 
-#now for the actual calculus :(
+calculatetailangle <- function(ny, hy, nx, hx, cy, sy, cx, sx) {
+  slope1 = (ny-hy)/(nx-hx)
+  slope2 = (cy-sy)/(cx-sx)
+  angle1rad = atan((slope1-slope2)/(1+slope1*slope2))
+  angle1 = rad2deg(angle1rad)
+  angle1
+}
 
 #we'll need the vector between nose and head, and the vector between spine 1 and caudal:
 tailbeats <- tailbeats %>%
   group_by(track) %>%
-  mutate(theta = acos( (((head.x - nose.x)*(caudal.x - spine1.x))+((head.y - nose.y)*(caudal.y - spine1.y)))/
-                         (sqrt((head.x - nose.x)^2+(head.y - nose.y)^2)*sqrt((caudal.x - spine1.x)^2+(caudal.y - spine1.y)^2)) ) ) %>%
-  mutate(thetadeg = rad2deg(theta))
+  mutate(theta = calculatetailangle(nose.y, head.y, nose.x, head.x, caudal.y, spine1.y, caudal.x, spine1.x))
 
-#and now the plots:
+#and now the plots.
 
 #just for visualization's sake, I will filter this a little bit heh.
 
@@ -274,7 +290,7 @@ figuretitle <- paste('Individual', individ, sep="_")
 thetalist <- split(tailbeats, tailbeats$track)
 
 thetafacet <-  
-  ggplot(tailbeats, aes(y=thetadeg, x=frame))+
+  ggplot(tailbeats, aes(y=theta, x=frame))+
   geom_point(mapping=aes(size=Behavior, color=Behavior, group=Behavior))+
   geom_path(linewidth=0.3)+
   xlab("Time (Seconds)")+
@@ -313,12 +329,9 @@ lapply(names(thetaplotlist),
 
 #of just the lateral displays:
 lateraldisplays <- tailbeats[leadlag(tailbeats$Behavior == "L", 20, 20),]
-lateraldisplay1 <- lateraldisplays %>%
-  group_by(track) %>%
-  slice(1:41)
 
 lateraldisplayfacet <-  
-  ggplot(lateraldisplay1, aes(y=thetadeg, x=frame))+
+  ggplot(lateraldisplay1, aes(y=theta, x=frame))+
   geom_point(size=0.5)+
   geom_path(linewidth=0.3)+
   xlab("Time (Seconds)")+
@@ -330,3 +343,143 @@ lateraldisplayfacet
 
 ggsave("lateraldisplayfacet.png", plot=lateraldisplayfacet, width=7, height=5,
        unit="in", path=here("HotFigures"))
+
+#a little bit of filtering to just look at the lateral displays we have, using the same method as chasing
+tmp <- head_df %>%
+  group_by(track) %>%
+  filter(Behavior == "L") %>%
+  mutate(LatID = seq_along(Behavior))
+#then, merge the labels back in for analysis
+annotateddisplaydf <- merge(x = head_df, 
+                          y = tmp, 
+                          by = c("frame", "nodetrackid", "nodes", "track", "x", "y", "Behavior", 
+                                 "distance", "velocity_mmpersec", "second"),
+                          all.x = TRUE)
+annotateddisplaydf <- annotateddisplaydf %>%
+  arrange(track, frame)
+annotateddisplaydf <- annotateddisplaydf[-c(8,9)]
+annotateddisplaydf$theta <- tailbeats$theta
+#
+lateraldisplays <- annotateddisplaydf[leadlag(annotateddisplaydf$Behavior == "L", 50, 50),]
+#annotation will simply be done by hand as fill is not working for me:
+lateraldisplays <- lateraldisplays %>%
+  group_by(track) %>%
+  mutate(LatID = case_when(frame %in% c(12040:12140) ~ 1,
+                          frame %in% c(26029:26129) ~ 2,
+                          frame %in% c(30521:30621) ~ 3))
+#and mutate a time column that resets for each bout:
+lateraldisplays <- lateraldisplays %>%
+  group_by(track,LatID) %>%
+  mutate(timereset = seq_along(cumsum(LatID)))
+
+#now the actual plot for each display
+latlist <- split(lateraldisplays, lateraldisplays$LatID)
+plotdisplay <- function(n){
+  ggplot(n, aes(x=second, y=theta, group=LatID))+
+    geom_line()+
+    theme_classic()+
+    facet_wrap(~track, ncol=1)
+}
+latplotlist <- lapply(latlist, plotdisplay)
+latnames <- paste("lateraldisplay", unique(lateraldisplays$LatID), sep='-')
+names(latplotlist) <- latnames
+lapply(names(latplotlist), 
+       function(x) ggsave(filename=paste(x,".png",sep=""), width=7, height=7, units=c("in"), plot=latplotlist[[x]], path=here("WT031623_26dpf_Figures")))
+
+#We're also gonna do this for chases:
+#grabbing code from up above
+tmp <- head_df %>%
+  group_by(track) %>%
+  filter(Behavior == "C") %>%
+  mutate(ChaseID = seq_along(Behavior))
+#then, merge the labels back in for analysis
+annotatedchasedf <- merge(x = head_df, 
+                          y = tmp, 
+                          by = c("frame", "nodetrackid", "nodes", "track", "x", "y", "Behavior", 
+                                 "distance", "velocity_mmpersec", "second"),
+                          all.x = TRUE)
+annotatedchasedf <- annotatedchasedf %>%
+  arrange(track, frame)
+#bind in theta:
+annotatedchasedf$theta <- tailbeats$theta
+#pull out chases
+annotatedchasedf_chases <- annotatedchasedf[leadlag(annotatedchasedf$Behavior == "C", 25, 25),]
+#and then from here, we need to expand the numbers to their corresponding chases
+#this fill works!!!
+annotatedchasedf_chases$Behavior_ChaseID <- paste(annotatedchasedf_chases$Behavior, annotatedchasedf_chases$ChaseID, sep='-')
+annotatedchasedf_chases$Behavior_ChaseID[annotatedchasedf_chases$Behavior_ChaseID == "NA-NA"] <- NA
+threshold <- 25
+annotatedchasedf_chases <- annotatedchasedf_chases %>%
+  mutate(Group_ID = cumsum(!is.na(Behavior_ChaseID))) %>%
+  group_by(Group_ID) %>%
+  mutate(ID = row_number() - 1) %>%
+  mutate(Behavior_ChaseID = ifelse(ID <= threshold, first(Behavior_ChaseID), NA_character_)) %>%
+  ungroup() %>%
+  fill(Behavior_ChaseID, .direction=c("up"))
+#little bit of df cleanup:
+annotatedchasedf_chases <- annotatedchasedf_chases[-c(7, 11, 14, 15)]
+annotatedchasedf_chases[c('Behavior', 'ChaseID')] <- str_split_fixed(annotatedchasedf_chases$Behavior_ChaseID, '-', 2)
+annotatedchasedf_chases <- annotatedchasedf_chases[-c(11,12)]
+annotatedchasedf_chases$ChaseID <- as.numeric(annotatedchasedf_chases$ChaseID)
+#and mutate a time column that resets for each bout:
+annotatedchasedf_chases <- annotatedchasedf_chases %>%
+  group_by(track,ChaseID) %>%
+  mutate(timereset = seq_along(cumsum(ChaseID)))
+
+chaselist <- split(annotatedchasedf_chases, annotatedchasedf_chases$ChaseID)
+plottheta <- function(n){
+  ggplot(n, aes(x=second, y=theta, group=ChaseID))+
+    geom_line()+
+    theme_classic()+
+    facet_wrap(~track, ncol=1)
+}
+chaseplotlist <- lapply(chaselist, plottheta)
+chasenames <- paste("chase", unique(annotatedchasedf_chases$ChaseID), sep='-')
+names(chaseplotlist) <- chasenames
+lapply(names(chaseplotlist), 
+       function(x) ggsave(filename=paste(x,"theta", ".png",sep=""), width=7, height=7, units=c("in"), plot=chaseplotlist[[x]], path=here("WT031623_26dpf_Figures")))
+
+chaselist <- split(annotatedchasedf_chases, annotatedchasedf_chases$ChaseID)
+plottheta <- function(n){
+  ggplot(n, aes(x=second, y=theta, group=ChaseID))+
+    geom_line()+
+    theme_classic()+
+    facet_wrap(~track, ncol=1)
+}
+chaseplotlist <- lapply(chaselist, plottheta)
+chasenames <- paste("chase", unique(annotatedchasedf_chases$ChaseID), sep='-')
+names(chaseplotlist) <- chasenames
+lapply(names(chaseplotlist), 
+       function(x) ggsave(filename=paste(x,"theta", ".png",sep=""), width=7, height=7, units=c("in"), plot=chaseplotlist[[x]], path=here("WT031623_26dpf_Figures")))
+
+#now that we've corrected our grouping, let's also redo the chase velocity spikes as well:
+plotvelocity <- function(n){
+  ggplot(n, aes(x=second, y=velocity_mmpersec, group=ChaseID))+
+    geom_line()+
+    theme_classic()+
+    facet_wrap(~track, ncol=1)
+}
+chaseplotlist <- lapply(chaselist, plotvelocity)
+chasenames <- paste("chase", unique(annotatedchasedf_chases$ChaseID), sep='-')
+names(chaseplotlist) <- chasenames
+lapply(names(chaseplotlist), 
+       function(x) ggsave(filename=paste(x,"velocity", ".png",sep=""), plot=chaseplotlist[[x]], path=here("WT031623_26dpf_Figures")))
+
+#idk if 'average theta' is going to tell us anything...I think theta range is a better statistic
+thetasummary <- annotatedchasedf_chases %>%
+  group_by(track, ChaseID) %>%
+  summarize(min = min(theta, na.rm=TRUE), max = max(theta, na.rm=T), thetarange = max - min)
+thetaaveragerange <- thetasummary %>%
+  group_by(track) %>%
+  summarize(thetarange = mean(thetarange))
+
+ggplot(thetasummary, aes(x=track, y=thetarange, group=track))+
+  geom_violin()+
+  geom_jitter(width=0.1, alpha=0.3, size=0.8)+
+  geom_crossbar(thetaaveragerange, mapping=aes(x=track, ymin=thetarange, ymax=thetarange), color="red", width=0.5)+
+  theme_classic()+
+  theme(text=element_text(size=15))+
+  ylab("Range of Tail Angle (Degrees)")+
+  xlab("Fish IDentity")
+
+

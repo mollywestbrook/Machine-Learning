@@ -47,7 +47,7 @@ trialdata <- read.csv(here("WT031623_26dpf_readyforanalysis.csv"))
 individ <- unique(trialdata$track)
 figuretitle <- paste('Individual', individ, sep="_")
 
-triallist <- split(dataframe_full, dataframe_full$track)
+triallist <- split(trialdata, trialdata$track)
 
 plotposition <- function(n) {
   ggplot(data=n, aes(x=x, y=y, color=as.factor(nodes)))+
@@ -297,14 +297,16 @@ head_df_vectors <- trialdata %>%
 
 ## Nearest Neighbor
 
-#to calculate nearest neighbor, we'll need a separate dataframe:
+#to calculate nearest neighbor, we'll need the head dataframe once more:
+head_df <- trialdata %>%
+  filter(nodes == "head")
 
 #all we really need is frame, track and xy position coordinates, thus:
-nearestneighbordf <- trialdata[c(1,4,5,6)]
+nearestneighbordf <- head_df[c(1,4,5,6)]
 #this does some data manipulation to organize the dataframe:
 nearestneighbordf$xy <- paste(nearestneighbordf$x, nearestneighbordf$y, sep="-")
 nearestneighbordf <- nearestneighbordf[-c(3,4)]
-nearestneighbordf <- reshape2::dcast(nearestneighbordf, c(frame)~track)
+nearestneighbordf <- reshape2::dcast(nearestneighbordf, frame~track)
 names(nearestneighbordf) <- c("frame", "track0xy", "track1xy", "track2xy", "track3xy", "track4xy")
 nearestneighbordf[c('track0x', 'track0y')] <- str_split_fixed(nearestneighbordf$track0xy, '-', 2)
 nearestneighbordf[c('track1x', 'track1y')] <- str_split_fixed(nearestneighbordf$track1xy, '-', 2)

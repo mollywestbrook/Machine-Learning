@@ -14,8 +14,8 @@ library(ggplotify)
 
 #file import
 #change the file name in quotes to your current .h5 file
-modeldata <- "20230926_1010framemodel_batchtrainingtest.002_08-02-2023_piz3_T6.analysis.h5"
-figuretitle <- "08-02-2023_piz3_T6_1010framemodel"
+modeldata <- "20231030_1074framemodel_batchtrainingtest.000_03-08-2023_group1_R.analysis.h5"
+figuretitle <- "03-08-2023_group1_R_1074framemodel"
 
 modeldata_bits <- h5ls(here(modeldata))
 
@@ -68,6 +68,10 @@ trackingscores <- ggplot(modeldata_trackingscores, aes(x=value, y=stat(count)/su
         axis.title=element_text(size=15), 
         plot.title=element_text(size=12)) 
 trackingscores
+
+lowtrackscores <- modeldata_trackingscores %>%
+  filter(value < 0.7)
+write.csv(lowtrackscores, file=paste(figuretitle, "lowtrackscores", ".csv", sep=""))
 
 ####
 
@@ -308,3 +312,4 @@ grob_to_pdf(
   meta_data_title = "Test PDF"
 )
      
+
