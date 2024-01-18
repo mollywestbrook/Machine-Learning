@@ -8,7 +8,7 @@ library(reshape2)
 library(data.table)
 
 #set file name to call in via rdhdf5 package
-filename <- "sleapmodel1_labels.v001.009_20230331_WT031623_26dpf_25fps.analysis.h5"
+filename <- "predictions_MW_05-29-2023_group5_R.mp4.000_05-29-2023_group5_R.analysis.h5"
 
 trialdata_bits <- h5ls(here(filename))
 
@@ -120,12 +120,7 @@ fwrite(tracks_final, file = "WT031623_26dpf_filetofocuson.csv", row.names=FALSE)
 
 tracks_final <- read_csv(here("pilotdataset_organized_tracksonly_raw.csv"))
 
-#so, now that we have our raw tracks, let's do some initial visualizations 
-#then we'll go and add velocity, acceleration etc.
-
-#first: let's start with each fish, all datapoints:
-
-#basic xyplots
+#basic xyplots as a visual to ensure everything is looking ok:
 
 xypositionplot <- function(n) {
   ggplot()+
@@ -146,91 +141,3 @@ names(plotlist) <- plotnames
 
 lapply(names(plotlist), 
        function(x) ggsave(filename=paste(x,"_xyposition",".png",sep=""), plot=plotlist[[x]], width = 7, height = 4, units = "in", path=here("Figures")))
-
-
-#subsampling time points to do a visual check of our vid:
-
-#let's do at the top of each minute:
-
-tracks_final$second <- tracks_final$frame/100
-
-#1-2 seconds:
-
-tracks_second1 <- tracks_final %>%
-  filter(frame %in% c(100:200))
-
-#and the plot. we'll do each fish as a color, all nodes:
-
-ggplot(tracks_second1, aes(x=x, y=y, group=as.factor(track), color=as.factor(track)))+
-  geom_point(size=1)+
-  theme_classic()+
-  labs(title="Second 1-2")+
-  xlab("Fish X Position")+
-  ylab("Fish Y Position")+
-  coord_cartesian(xlim=c(0, 224.5), ylim=c(0, 168.39))+
-  theme(text = element_text(size = 15)) 
-
-#60-61 seconds:
-
-tracks_second60 <- tracks_final %>%
-  filter(frame %in% c(6000:6100))
-
-#and the plot. we'll do each fish as a color, all nodes:
-
-ggplot(tracks_second60, aes(x=x, y=y, group=as.factor(track), color=as.factor(track)))+
-  geom_point(size=1)+
-  theme_classic()+
-  labs(title="Second 60-61")+
-  xlab("Fish X Position")+
-  ylab("Fish Y Position")+
-  coord_cartesian(xlim=c(0, 224.5), ylim=c(0, 168.39))+
-  theme(text = element_text(size = 15))
-
-#120-121 seconds:
-
-tracks_second120 <- tracks_final %>%
-  filter(frame %in% c(12000:12100))
-
-#and the plot. we'll do each fish as a color, all nodes:
-
-ggplot(tracks_second120, aes(x=x, y=y, group=as.factor(track), color=as.factor(track)))+
-  geom_point(size=1)+
-  theme_classic()+
-  labs(title="Second 120-121")+
-  xlab("Fish X Position")+
-  ylab("Fish Y Position")+
-  coord_cartesian(xlim=c(0, 224.5), ylim=c(0, 168.39))+
-  theme(text = element_text(size = 15))
-
-#180-181 seconds:
-
-tracks_second180 <- tracks_final %>%
-  filter(frame %in% c(18000:18100))
-
-#and the plot. we'll do each fish as a color, all nodes:
-
-ggplot(tracks_second180, aes(x=x, y=y, group=as.factor(track), color=as.factor(track)))+
-  geom_point(size=1)+
-  theme_classic()+
-  labs(title="Second 180-181")+
-  xlab("Fish X Position")+
-  ylab("Fish Y Position")+
-  coord_cartesian(xlim=c(0, 224.5), ylim=c(0, 168.39))+
-  theme(text = element_text(size = 15))
-
-#240-241 seconds:
-
-tracks_second240 <- tracks_final %>%
-  filter(frame %in% c(24000:24100))
-
-#and the plot. we'll do each fish as a color, all nodes:
-
-ggplot(tracks_second240, aes(x=x, y=y, group=as.factor(track), color=as.factor(track)))+
-  geom_point(size=1)+
-  theme_classic()+
-  labs(title="Second 240-241")+
-  xlab("Fish X Position")+
-  ylab("Fish Y Position")+
-  coord_cartesian(xlim=c(0, 224.5), ylim=c(0, 168.39))+
-  theme(text = element_text(size = 15))
-  

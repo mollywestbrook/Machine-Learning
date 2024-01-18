@@ -483,3 +483,120 @@ ggplot(thetasummary, aes(x=track, y=thetarange, group=track))+
   xlab("Fish IDentity")
 
 
+#for lab meeting next week, I want average nearest neighbor during a chase
+#I will summarize for absolute minimum
+
+nnsummary <- bdf %>%
+  select(BehaviorID, truenn, truenndist) %>%
+  group_by(BehaviorID) %>%
+  reframe(absoluteminimum = min(truenndist), truenn = first(truenn))
+
+nnsummaryaverage <- nnsummary %>%
+  group_by(truenn) %>%
+  summarize(absoluteminimum = mean(absoluteminimum))
+
+#now I can graph:
+
+ggplot(nnsummary, aes(x=truenn, y=absoluteminimum))+
+  geom_bar(nnsummaryaverage, mapping=aes(x=truenn, y=absoluteminimum, fill=truenn), stat="identity")+
+  geom_jitter(width=0.1, alpha=0.5)+
+  ylab("Nearest Neighbor Distance (mm)")+
+  xlab("Fish Identities of the Nearest Neighbors")+
+  theme_classic()+
+  theme(text=element_text(size=15))
+
+#well, this makes me ask herm, the body length of the fish?
+#so, let's do that. it will take some fancy casting again but w/e
+bodylength <- trialdata %>%
+  group_by(track) %>%
+  filter(nodes %in% c("nose", "caudal")) %>%
+  select(frame, nodes, track, x, y) %>%
+  unite(col='x-y', c('x', 'y'), sep='-') %>%
+  spread(key=nodes, value="x-y") %>%
+  separate(col=nose, into=c('nose.x', 'nose.y'), sep='-') %>%
+  separate(col=caudal, into=c('caudal.x', 'caudal.y'), sep='-') %>%
+  arrange(track, frame) %>%
+  mutate_at(c("caudal.x", "caudal.y", "nose.x", "nose.y"), as.numeric) %>%
+  mutate(bodylength = distance_function(nose.x, nose.y, caudal.x, caudal.y))
+
+#kinda want to see this on a jitter plot...
+ggplot(bodylength, aes(x=track, y=bodylength))+
+  geom_jitter(width=0.2)
+
+###############################################################################
+
+#Heading angle drafts
+
+#We'll need to use the same strategy as nearest neighbor
+#as we'll need relative heading angle of each fish
+#code taken from the feature extraction script from nearest neighbor
+head_df <- trialdata %>%
+  filter(nodes == "head")
+bearingangledf <- head_df[c(1,4,5,6)]
+bearingangledf$xy <- paste(bearingangledf$x, bearingangledf$y, sep="-")
+bearingangledf <- bearingangledf[-c(3,4)]
+bearingangledf <- reshape2::dcast(bearingangledf, frame~track)
+names(bearingangledf) <- c("frame", "track0xy", "track1xy", "track2xy", "track3xy", "track4xy")
+bearingangledf[c('track0x', 'track0y')] <- str_split_fixed(bearingangledf$track0xy, '-', 2)
+bearingangledf[c('track1x', 'track1y')] <- str_split_fixed(bearingangledf$track1xy, '-', 2)
+bearingangledf[c('track2x', 'track2y')] <- str_split_fixed(bearingangledf$track2xy, '-', 2)
+bearingangledf[c('track3x', 'track3y')] <- str_split_fixed(bearingangledf$track3xy, '-', 2)
+bearingangledf[c('track4x', 'track4y')] <- str_split_fixed(bearingangledf$track4xy, '-', 2)
+bearingangledf <- bearingangledf[-c(2:6)]
+names(bearingangledf) <- c("frame", "X0", "Y0", "X1", "Y1", "X2", "Y2", "X3", "Y3", "X4", "Y4")
+bearingangledf[] <- lapply(bearingangledf, as.numeric)
+frame <- bearingangledf$frame
+
+calculatebearingangle <- function(X1, Y1, X2, Y2) {
+  bearing_rad = atan2(X2 - X1, Y1 - Y2)
+  bearing = rad2deg(bearing_rad)
+  bearing
+}
+
+#So we'll need to do each fish to each other fish
+#WITH repeats -_-
+F0_F0 <- calculatebearingangle(bearingangledf$X0, bearingangledf$Y0, bearingangledf$X0, bearingangledf$Y0)
+F0_F1 <- calculatebearingangle(bearingangledf$X0, bearingangledf$Y0, bearingangledf$X1, bearingangledf$Y1)
+F0_F2 <- calculatebearingangle(bearingangledf$X0, bearingangledf$Y0, bearingangledf$X2, bearingangledf$Y2)
+F0_F3 <- calculatebearingangle(bearingangledf$X0, bearingangledf$Y0, bearingangledf$X3, bearingangledf$Y3)
+F0_F4 <- calculatebearingangle(bearingangledf$X0, bearingangledf$Y0, bearingangledf$X4, bearingangledf$Y4)
+F1_F0 <- calculatebearingangle(bearingangledf$X1, bearingangledf$Y1, bearingangledf$X0, bearingangledf$Y0)
+F1_F1 <- calculatebearingangle(bearingangledf$X1, bearingangledf$Y1, bearingangledf$X1, bearingangledf$Y1)
+F1_F2 <- calculatebearingangle(bearingangledf$X1, bearingangledf$Y1, bearingangledf$X2, bearingangledf$Y2)
+F1_F3 <- calculatebearingangle(bearingangledf$X1, bearingangledf$Y1, bearingangledf$X3, bearingangledf$Y3)
+F1_F4 <- calculatebearingangle(bearingangledf$X1, bearingangledf$Y1, bearingangledf$X4, bearingangledf$Y4)
+F2_F0 <- calculatebearingangle(bearingangledf$X2, bearingangledf$Y2, bearingangledf$X0, bearingangledf$Y0)
+F2_F1 <- calculatebearingangle(bearingangledf$X2, bearingangledf$Y2, bearingangledf$X1, bearingangledf$Y1)
+F2_F2 <- calculatebearingangle(bearingangledf$X2, bearingangledf$Y2, bearingangledf$X2, bearingangledf$Y2)
+F2_F3 <- calculatebearingangle(bearingangledf$X2, bearingangledf$Y2, bearingangledf$X3, bearingangledf$Y3)
+F2_F4 <- calculatebearingangle(bearingangledf$X2, bearingangledf$Y2, bearingangledf$X4, bearingangledf$Y4)
+F3_F0 <- calculatebearingangle(bearingangledf$X3, bearingangledf$Y3, bearingangledf$X0, bearingangledf$Y0)
+F3_F1 <- calculatebearingangle(bearingangledf$X3, bearingangledf$Y3, bearingangledf$X1, bearingangledf$Y1)
+F3_F2 <- calculatebearingangle(bearingangledf$X3, bearingangledf$Y3, bearingangledf$X2, bearingangledf$Y2)
+F3_F3 <- calculatebearingangle(bearingangledf$X3, bearingangledf$Y3, bearingangledf$X3, bearingangledf$Y3)
+F3_F4 <- calculatebearingangle(bearingangledf$X3, bearingangledf$Y3, bearingangledf$X4, bearingangledf$Y4)
+F4_F0 <- calculatebearingangle(bearingangledf$X4, bearingangledf$Y4, bearingangledf$X0, bearingangledf$Y0)
+F4_F1 <- calculatebearingangle(bearingangledf$X4, bearingangledf$Y4, bearingangledf$X1, bearingangledf$Y1)
+F4_F2 <- calculatebearingangle(bearingangledf$X4, bearingangledf$Y4, bearingangledf$X2, bearingangledf$Y2)
+F4_F3 <- calculatebearingangle(bearingangledf$X4, bearingangledf$Y4, bearingangledf$X3, bearingangledf$Y3)
+F4_F4 <- calculatebearingangle(bearingangledf$X4, bearingangledf$Y4, bearingangledf$X4, bearingangledf$Y4)
+
+f0df <- data.frame(frame,F0_F0, F0_F1, F0_F2, F0_F3, F0_F4)
+f1df <- data.frame(frame,F1_F0, F1_F1, F1_F2, F1_F3, F1_F4)
+f2df <- data.frame(frame,F2_F0, F2_F1, F2_F2, F2_F3, F2_F4)
+f3df <- data.frame(frame,F3_F0, F3_F1, F3_F2, F3_F3, F3_F4)
+f4df <- data.frame(frame,F4_F0, F4_F1, F4_F2, F4_F3, F4_F4)
+names(f0df) <- c("frame", "angletofish0", "angletofish1", "angletofish2", "angletofish3", "angletofish4")
+names(f1df) <- c("frame", "angletofish0", "angletofish1", "angletofish2", "angletofish3", "angletofish4")
+names(f2df) <- c("frame", "angletofish0", "angletofish1", "angletofish2", "angletofish3", "angletofish4")
+names(f3df) <- c("frame", "angletofish0", "angletofish1", "angletofish2", "angletofish3", "angletofish4")
+names(f4df) <- c("frame", "angletofish0", "angletofish1", "angletofish2", "angletofish3", "angletofish4")
+bearingangle_featuredf <- rbind(f0df, f1df, f2df, f3df, f4df)
+rm(F0_F0, F0_F1, F0_F2, F0_F3, F0_F4,
+   F1_F0, F1_F1, F1_F2, F1_F3, F1_F4,
+   F2_F0, F2_F1, F2_F2, F2_F3, F2_F4,
+   F3_F0, F3_F1, F3_F2, F3_F3, F3_F4,
+   F4_F0, F4_F1, F4_F2, F4_F3, F4_F4)
+
+#that should do it folks!
+

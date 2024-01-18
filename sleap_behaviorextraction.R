@@ -43,6 +43,7 @@ bdf <- annotatedbehavior[leadlag(annotatedbehavior$Behavior == behaviorofinteres
 
 bdf$Behavior_BehaviorID <- paste(bdf$Behavior, bdf$BehaviorID, sep='-')
 bdf$Behavior_BehaviorID[bdf$Behavior_BehaviorID == "NA-NA"] <- NA
+bdf$Behavior_BehaviorID[!str_detect(bdf$Behavior_BehaviorID, behaviorofinterest)] <- NA
 threshold <- behaviorwindow
 bdf <- bdf %>%
   mutate(Group_ID = cumsum(!is.na(Behavior_BehaviorID))) %>%
