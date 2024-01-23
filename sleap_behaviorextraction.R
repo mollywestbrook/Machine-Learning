@@ -13,7 +13,7 @@ library(REdaS)
 #######
 
 behaviorofinterest <- "C" #alpha code from ethogram
-behaviorwindow <- 25 #generally 25 frames
+behaviorwindow <- 50 #generally 25 frames
 
 #calculate a unique id for each behavioral instance
 tmp <- featuredf %>%

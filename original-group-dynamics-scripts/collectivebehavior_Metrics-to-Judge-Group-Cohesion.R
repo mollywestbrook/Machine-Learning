@@ -6,29 +6,26 @@
 #Note: for metrics 1-4, we do not need fish identity
 #for metrics 5-7, we do (as it's based on speed and speed will be jumbing around if the identities are flip flopping)
 
+trialdata <- read.csv(here("formatted_05-22-2023_group5_L.csv"))
+
+trialdata_head <- trialdata %>%
+  filter(nodes == "head")
+
 #to start, we'll do a sampled behavioral trace
 
-trialdata_framesample <- trialdata %>%
-  filter(Frame%%25 == 0)
+trialdata_framesample <- trialdata_head %>%
+  filter(frame%%100 == 0)
 
-onesecondtrace <- ggplot()+
-  geom_point(trialdata_framesample, mapping=aes(X1, Y1), color="red", size=1, alpha=0.3)+
-  geom_path(trialdata_framesample, mapping=aes(X1, Y1), color="red", size=1, alpha=0.3)+
-  geom_point(trialdata_framesample, mapping=aes(X2, Y2), color="blue", size=1, alpha=0.3)+
-  geom_path(trialdata_framesample, mapping=aes(X2, Y2), color="blue", size=1, alpha=0.3)+
-  geom_point(trialdata_framesample, mapping=aes(X3, Y3), color="darkgreen", size=1, alpha=0.3)+
-  geom_path(trialdata_framesample, mapping=aes(X3, Y3), color="darkgreen", size=1, alpha=0.3)+
-  geom_point(trialdata_framesample, mapping=aes(X4, Y4), color="purple", size=1, alpha=0.3)+
-  geom_path(trialdata_framesample, mapping=aes(X4, Y4), color="purple", size=1, alpha=0.3)+
-  geom_point(trialdata_framesample, mapping=aes(X5, Y5), color="orange", size=1, alpha=0.3)+
-  geom_path(trialdata_framesample, mapping=aes(X5, Y5), color="orange", size=1, alpha=0.3)+
+foursecondtrace <- ggplot(trialdata_framesample, aes(x, y, color=as.factor(track)))+
+  geom_point(size=1, alpha=0.3)+
+  geom_path(size=1, alpha=0.3)+
   ylab("X Position (mm)")+
   xlab("Y Position (mm)")+
   theme(text = element_text(size = 20))+   
   #coord_flip()+
   theme_classic()
-onesecondtrace
-ggsave(onesecondtrace, file="onesecondtrace_bonsai.png", path=here("Figures"))
+foursecondtrace
+ggsave(foursecondtrace, file="foursecondtrace_052223_G5_L.png", path=here("Figures"))
 
 #Single Statistics:
 
@@ -41,7 +38,9 @@ groupspacing <- median(trialdata_coordinatedistance$distavg, na.rm=TRUE)
 groupspacing <- groupspacing/456.96 #tank
 #groupspacing <- groupspacing/157 #dish
 
-#2: Polarization (we skip for now)
+#2: Polarization 
+
+unitvelocity
 
 #3: Nearest Neighbor distance (median of the closest neighbor for each fish at each time step)
 

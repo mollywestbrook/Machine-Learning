@@ -14,8 +14,8 @@ library(ggplotify)
 
 #file import
 #change the file name in quotes to your current .h5 file
-modeldata <- "20231030_1074framemodel_batchtrainingtest.000_03-08-2023_group1_R.analysis.h5"
-figuretitle <- "03-08-2023_group1_R_1074framemodel"
+modeldata <- "predictions_MW_010-02-2023_piz4_L.mp4.000_10-02-2023_piz4_L.analysis.h5"
+figuretitle <- "010-02-2023_piz4_L_1165framemodel"
 
 modeldata_bits <- h5ls(here(modeldata))
 
@@ -203,6 +203,27 @@ tailscores
 
 ####
 
+#MLE Score summary table
+
+instancescoresum <- sum(modeldata_instancescores$value > 0.95, na.rm=T)/length(modeldata_instancescores$value)*100
+pointscoresum <- sum(modeldata_pointscores_melted$value > 0.95, na.rm=T)/length(modeldata_pointscores_melted$value)*100
+trackingscoresum <- sum(modeldata_trackingscores$value > 0.95, na.rm=T)/length(modeldata_trackingscores$value)*100
+nosesum <- sum(modeldata_pointscores_noses$value > 0.95, na.rm=T)/length(modeldata_pointscores_noses$value)*100
+eyeLsum <- sum(modeldata_pointscores_eyeL$value > 0.95, na.rm=T)/length(modeldata_pointscores_eyeL$value)*100
+eyeRsum <- sum(modeldata_pointscores_eyeR$value > 0.95, na.rm=T)/length(modeldata_pointscores_eyeR$value)*100
+headsum <- sum(modeldata_pointscores_head$value > 0.95, na.rm=T)/length(modeldata_pointscores_head$value)*100
+spine1sum <- sum(modeldata_pointscores_spine1$value > 0.95, na.rm=T)/length(modeldata_pointscores_spine1$value)*100
+spine2sum <- sum(modeldata_pointscores_spine2$value > 0.95, na.rm=T)/length(modeldata_pointscores_spine2$value)*100
+caudalsum <- sum(modeldata_pointscores_caudal$value > 0.95, na.rm=T)/length(modeldata_pointscores_caudal$value)*100
+tailsum <- sum(modeldata_pointscores_tail$value > 0.95, na.rm=T)/length(modeldata_pointscores_tail$value)*100
+
+names <- c("instancescore", "pointscore", "trackingscore", "nose", "head", "eyeL", "eyeR", "spine1", "spine2", "caudal", "tail")
+values <- c(instancescoresum, pointscoresum, trackingscoresum, nosesum, headsum, eyeLsum, eyeRsum, spine1sum, spine2sum, caudalsum, tailsum)
+
+scoresummary <- data.frame(names, values)
+
+####
+
 ##NA count
 
 #data organization
@@ -264,9 +285,12 @@ table2grob <- tableGrob(table2)
 table3grob <- tableGrob(table3)
 table4grob <- tableGrob(table4)
 
+scoresummarygrob <- tableGrob(scoresummary)
+
 title1 <- "Overall Model MLE Scores, compared to Training Dataset"
 title2 <- "Node MLE Scores, compared to Training Dataset"
 title3 <- "NA Count for each Fish, for each Node"
+title4 <- "MLE Score Summary"
 
 page1 = grob_layout(
   grob_row(height=20, grob_col(title1, border=T)),
@@ -306,10 +330,15 @@ page5 = grob_layout(
   height=200
 )
 
+page6 = grob_layout(
+  grob_row(height=20, grob_col(title4, border=T)),
+  grob_row(grob_col(scoresummarygrob)),
+  width=200,
+  height=200
+)
+
 grob_to_pdf(
-  page1, page2, page3, page4, page5,
+  page1, page2, page3, page4, page5, page6,
   file_name = paste(figuretitle, "summary", ".pdf", sep=""),
   meta_data_title = "Test PDF"
 )
-     
-

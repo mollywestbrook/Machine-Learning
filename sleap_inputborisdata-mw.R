@@ -8,11 +8,11 @@ library(reshape2)
 library(data.table)
 
 #bring in file (csv form, ready for analysis)
-borisdata <- read.csv(here("WT031623_26dpf_filetofocuson_borisevents_readyforimport.csv")) #boris
-trialdata <- read.csv(here("WT031623_26dpf_filetofocuson.csv")) #sleap
+borisdata <- read.csv(here("boris_05-29-2023_group5_R.csv")) #boris
+trialdata <- read.csv(here("predictions_05-29-2023_group5_R.csv")) #sleap
 
 #some organizing stuff for the boris data
-borisdata <- reshape2::melt(borisdata, id.vars = c("Observation.id", "Behavior"), measure.vars = c("Start"))
+borisdata <- reshape2::melt(borisdata, id.vars = c("Observation.id", "Behavior"), measure.vars = c("Timestamp"))
 borisdata <- borisdata[order(borisdata$value),]
 borisdata$value <- borisdata$value*25
 
@@ -27,10 +27,10 @@ dataframe_full <- merge(x=trialdata, y=borisdata, by="frame", all=TRUE)
 dataframe_full <- dataframe_full %>%
   arrange(nodetrackid, frame)
 #drop unneeded columns
-dataframe_full <- dataframe_full[-c(7,9)]
+dataframe_full <- dataframe_full[-c(8,10)]
 
 #and now we write our csv:
-fwrite(dataframe_full, file = "WT031623_26dpf_readyforanalysis.csv", row.names=FALSE)
+fwrite(dataframe_full, file = "formatted_05-29-2023_group5_R.csv", row.names=FALSE)
 
 #########################################################################################
 #OLD ATTEMPTS

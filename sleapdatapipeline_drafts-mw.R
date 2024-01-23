@@ -10,6 +10,9 @@ library(data.table)
 library(zoo)
 library(REdaS)
 
+#bring in data
+trialdata <- read.csv(here("formatted_05-29-2023_group5_R.csv"))
+
 #####################################################################################
 #assemble head point df for calcs where we only need one point:
 
@@ -599,4 +602,19 @@ rm(F0_F0, F0_F1, F0_F2, F0_F3, F0_F4,
    F4_F0, F4_F1, F4_F2, F4_F3, F4_F4)
 
 #that should do it folks!
+
+#################################################################################
+
+#just a couple of xy plots for meeting today
+
+trialdata <- tracks_final
+
+first200frames <- trialdata %>%
+  group_by(track) %>%
+  filter(frame %in% c(0:200))
+
+ggplot(first200frames, aes(x=x, y=y, color=as.factor(track)))+
+  geom_point(size=1, alpha=0.5)+
+  theme_classic()+
+  theme(text=element_text(size=15))
 

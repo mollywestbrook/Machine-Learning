@@ -197,12 +197,23 @@ NNDF <- merge(NNDF, nnearestneighbor_fulldist, by=c("frame"), all.x=T)
 NNDF <- NNDF %>%
   arrange(track, frame)
 
-featuredf <- merge(featuredf, NNDF, by=c("frame", "track"), all.x=T) #this line has not been checked
+featuredf <- merge(featuredf, NNDF, by=c("frame", "track"), all.x=T) #this line has not been checked thoroughly; first glance is working
+featuredf <- featuredf %>%
+  arrange(track, frame)
 
 #cleanup:
 rm(Fish0_NN, Fish1_NN, Fish2_NN, Fish3_NN, Fish4_NN, nnearestneighbor_fulldist, frame)
 
-########## relative heading angle #############################################
+
+########## true heading angle (relative to (0,0) in rad) ##############################
+
+featuredf$trueheadingangle <- atan2(featuredf$y, featuredf$x)
+
+# polarity <- featuredf %>%
+#   group_by(frame) %>%
+#   summarize(polarity = abs(mean(trueheadingangle, na.rm=TRUE)))
+
+########## relative heading angle in deg #############################################
 
 #using the same dataframe as nearest neighbor above, just do a quick rename:
 bearingangledf <- nearestneighbordf
@@ -263,6 +274,10 @@ rm(F0_F0, F0_F1, F0_F2, F0_F3, F0_F4,
 
 featuredf <- cbind(featuredf, bearingangle_featuredf)
 
+featuredf <- featuredf %>%
+  group_by(frame, track) %>%
+  arrange(track, frame)
+
 ######## body length ############################################
 
 #this may actually be useful for a potential frame alerter
@@ -277,6 +292,9 @@ bodylength <- trialdata %>%
   arrange(track, frame) %>%
   mutate_at(c("caudal.x", "caudal.y", "nose.x", "nose.y"), as.numeric) %>%
   mutate(bodylength = distance_function(nose.x, nose.y, caudal.x, caudal.y))
+
+#when you're ready to move to analysis, run this line to clean up your environment:
+#rm(bearingangle_featuredf, bearingangledf, nearestneighbordf, NNDF, tailbeats, frame)
 
 
 write_csv(featuredf_tmp, "featureextractiondataframe.csv")

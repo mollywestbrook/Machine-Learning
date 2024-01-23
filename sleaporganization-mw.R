@@ -8,7 +8,7 @@ library(reshape2)
 library(data.table)
 
 #set file name to call in via rdhdf5 package
-filename <- "predictions_MW_05-29-2023_group5_R.mp4.000_05-29-2023_group5_R.analysis.h5"
+filename <- "predictions_MW_09-27-2023_piz4_L.mp4.000_09-27-2023_piz4_L.analysis.h5"
 
 trialdata_bits <- h5ls(here(filename))
 
@@ -52,6 +52,10 @@ tracks_smooth <- sapply(tracks_interp, function(x) rollmean(x, 10, fill=NA)) #sm
 tracks_smooth <- as.data.frame(tracks_smooth)
 
 rm(trialdata_tracks, tracks_interp) #drop tmp files we don't need
+
+# if data is already interpolated, comment lines 48-52 and uncomment this:
+
+# tracks_smooth <- trialdata_tracks
 
 #step 2: grab track names from other elements of the h5 file, to keep this universal to any h5 file input
 
@@ -105,12 +109,12 @@ rm(tracks_smooth, tracks_smooth_tmp, rep_track_labels, track_labels)
 
 #these two chunks are for molly's own set up, but can adjust as needed for yours
 #and we need to make sure to convert these to mm:
-# tracks_final$x <- tracks_final$x/5.79
-# tracks_final$y <- tracks_final$y/5.79
+tracks_final$x <- tracks_final$x/5.79
+tracks_final$y <- tracks_final$y/5.79
 #add a second:
-# tracks_final$second <- tracks_final$frame/100
+tracks_final$second <- tracks_final$frame/100
 
-fwrite(tracks_final, file = "WT031623_26dpf_filetofocuson.csv", row.names=FALSE)
+fwrite(tracks_final, file = "predictions_09-27-2023_piz4_L.csv", row.names=FALSE)
 
 #and tracks_final will be our dataset with everything, all the things, so beautiful
 
